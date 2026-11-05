@@ -4,7 +4,7 @@
   <v-app>
     <v-main>
       <v-container>
-        <h1 class="text-h4">Task Management</h1>
+        <RouterView />
       </v-container>
     </v-main>
   </v-app>
