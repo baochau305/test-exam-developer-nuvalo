@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignId('assigned_to')->constrained('users')->cascadeOnDelete();
             $table->date('due_date')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
