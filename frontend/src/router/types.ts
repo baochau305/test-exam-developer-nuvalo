@@ -4,6 +4,8 @@ import 'vue-router'
 declare module 'vue-router' {
   interface RouteMeta {
     title?: string
+    /** Layout wrapping the page, defaults to 'default' (app bar + navigation drawer) */
+    layout?: 'default' | 'blank'
   }
 }
 

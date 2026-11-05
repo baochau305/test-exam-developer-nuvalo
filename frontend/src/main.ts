@@ -11,4 +11,5 @@ app.use(createPinia())
 app.use(router)
 app.use(vuetify)
 
-app.mount('#app')
+// Wait for the initial navigation so the correct layout is picked on first render
+router.isReady().then(() => app.mount('#app'))
