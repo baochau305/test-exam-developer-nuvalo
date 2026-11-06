@@ -12,12 +12,7 @@ class UserRepository
         return User::query()
             ->withCount('tasks')
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->where('role', $role))
-            ->when($filters['search'] ?? null, function ($query, $search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
+            ->when($filters['search'] ?? null, fn ($query, $search) => $query->search($search, ['name', 'email']))
             ->latest()
             ->latest('id')
             ->paginate($perPage)

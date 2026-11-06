@@ -22,6 +22,7 @@ class IndexTaskRequest extends FormRequest
         return [
             'status' => ['nullable', Rule::enum(TaskStatus::class)],
             'assigned_to' => ['nullable', 'integer'],
+            'search' => ['nullable', 'string', 'max:255'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.Pagination::MAX_PER_PAGE],
         ];
     }

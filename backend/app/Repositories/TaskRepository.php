@@ -13,7 +13,9 @@ class TaskRepository
             ->with('user')
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['assigned_to'] ?? null, fn ($query, $userId) => $query->where('assigned_to', $userId))
+            ->when($filters['search'] ?? null, fn ($query, $search) => $query->search($search, ['title', 'description']))
             ->latest()
+            ->latest('id')
             ->paginate($perPage)
             ->withQueryString();
     }
