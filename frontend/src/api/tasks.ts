@@ -1,6 +1,6 @@
 import http from './http'
 import type { ApiResource, Paginated } from '@/types/api'
-import type { Task, TaskStatus } from '@/types/task'
+import type { Task, TaskPayload, TaskStatus } from '@/types/task'
 
 /** Query params accepted by GET /api/tasks */
 export interface TaskListParams {
@@ -20,6 +20,16 @@ export const tasksApi = {
 
   async get(id: number): Promise<Task> {
     const { data } = await http.get<ApiResource<Task>>(`/tasks/${id}`)
+    return data.data
+  },
+
+  async create(payload: TaskPayload): Promise<Task> {
+    const { data } = await http.post<ApiResource<Task>>('/tasks', payload)
+    return data.data
+  },
+
+  async update(id: number, payload: Partial<TaskPayload>): Promise<Task> {
+    const { data } = await http.put<ApiResource<Task>>(`/tasks/${id}`, payload)
     return data.data
   },
 }

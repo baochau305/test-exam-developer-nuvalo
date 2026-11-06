@@ -15,3 +15,12 @@ export interface Task {
   created_at: string
   updated_at: string
 }
+
+/** Body of POST /api/tasks (all fields) and PUT /api/tasks/{id} (any subset) */
+export interface TaskPayload {
+  title: string
+  description: string | null
+  status: TaskStatus
+  assigned_to: number
+  due_date: string | null
+}

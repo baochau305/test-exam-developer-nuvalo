@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 
+import TaskForm from '@/components/TaskForm.vue'
 import TaskStatusChip from '@/components/TaskStatusChip.vue'
 import { useStore } from '@/store'
 
@@ -20,6 +21,22 @@ function loadTask() {
 
 // Reload when navigating from one task to another (same component instance is reused)
 watch(() => props.id, loadTask, { immediate: true })
+
+const dialog = ref(false)
+// New key on every open, so the form starts from the latest task data
+const formKey = ref(0)
+const snackbar = ref(false)
+
+function openForm() {
+  formKey.value++
+  dialog.value = true
+}
+
+// The store already replaced `current` with the saved task
+function onSaved() {
+  dialog.value = false
+  snackbar.value = true
+}
 
 function formatDateTime(value: string | null) {
   return value ? new Date(value).toLocaleString() : '-'
@@ -44,6 +61,8 @@ function formatDateTime(value: string | null) {
     <v-card-title class="d-flex align-center ga-2">
       <span>{{ task.title }}</span>
       <TaskStatusChip :status="task.status" />
+      <v-spacer />
+      <v-btn variant="text" prepend-icon="mdi-pencil" @click="openForm">Edit</v-btn>
     </v-card-title>
 
     <v-card-text>
@@ -73,4 +92,14 @@ function formatDateTime(value: string | null) {
       </v-table>
     </v-card-text>
   </v-card>
+
+  <v-dialog v-model="dialog" max-width="600">
+    <v-card title="Edit task">
+      <v-card-text>
+        <TaskForm :key="formKey" :task="task" @saved="onSaved" @cancel="dialog = false" />
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar v-model="snackbar" color="success" :timeout="3000">Task updated.</v-snackbar>
 </template>

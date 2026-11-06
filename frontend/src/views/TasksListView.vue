@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import type { DataTableHeader } from 'vuetify'
 
 import type { TaskListParams } from '@/api/tasks'
+import TaskForm from '@/components/TaskForm.vue'
 import TaskStatusChip from '@/components/TaskStatusChip.vue'
 import { TASK_STATUS_OPTIONS } from '@/constants/taskStatus'
 import { useStore } from '@/store'
@@ -37,15 +38,8 @@ watch(search, (value, _, onCleanup) => {
   onCleanup(() => clearTimeout(timer))
 })
 
-// A new filter means a new result set: go back to page 1.
-// Changing `page` makes the table emit update:options, which reloads by itself.
-watch([status, debouncedSearch], () => {
-  if (page.value === 1) {
-    loadTasks()
-  } else {
-    page.value = 1
-  }
-})
+// A new filter means a new result set: go back to page 1
+watch([status, debouncedSearch], reloadFromFirstPage)
 
 const tasks = computed(() => store.state.tasks.items)
 const total = computed(() => store.state.tasks.total)
@@ -65,10 +59,53 @@ function loadTasks() {
 
   return store.dispatch('tasks/fetchTasks', params)
 }
+
+// Changing `page` makes the table emit update:options, which reloads by itself
+function reloadFromFirstPage() {
+  if (page.value === 1) {
+    loadTasks()
+  } else {
+    page.value = 1
+  }
+}
+
+// Create / edit dialog
+const dialog = ref(false)
+const editingTask = ref<Task | null>(null)
+// New key on every open, so the form starts clean (v-dialog keeps its content mounted)
+const formKey = ref(0)
+
+const snackbar = ref(false)
+const snackbarText = ref('')
+
+function openForm(task: Task | null = null) {
+  editingTask.value = task
+  formKey.value++
+  dialog.value = true
+}
+
+function onSaved() {
+  const wasEdit = !!editingTask.value
+  dialog.value = false
+
+  snackbarText.value = wasEdit ? 'Task updated.' : 'Task created.'
+  snackbar.value = true
+
+  // New tasks come first (sorted by latest); an edit may move the task out of the current filter
+  if (wasEdit) {
+    loadTasks()
+  } else {
+    reloadFromFirstPage()
+  }
+}
 </script>
 
 <template>
-  <h1 class="text-h5 mb-4">Tasks</h1>
+  <div class="d-flex align-center mb-4">
+    <h1 class="text-h5">Tasks</h1>
+    <v-spacer />
+    <v-btn color="primary" prepend-icon="mdi-plus" @click="openForm()">New task</v-btn>
+  </div>
 
   <v-row dense class="mb-2">
     <v-col cols="12" sm="6" md="4">
@@ -129,6 +166,19 @@ function loadTasks() {
       <v-btn variant="text" size="small" :to="{ name: 'task-detail', params: { id: item.id } }">
         View
       </v-btn>
+      <v-btn variant="text" size="small" @click="openForm(item)">Edit</v-btn>
     </template>
   </v-data-table-server>
+
+  <v-dialog v-model="dialog" max-width="600">
+    <v-card :title="editingTask ? 'Edit task' : 'New task'">
+      <v-card-text>
+        <TaskForm :key="formKey" :task="editingTask" @saved="onSaved" @cancel="dialog = false" />
+      </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <v-snackbar v-model="snackbar" color="success" :timeout="3000">
+    {{ snackbarText }}
+  </v-snackbar>
 </template>

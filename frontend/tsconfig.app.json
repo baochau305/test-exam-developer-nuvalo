@@ -1,14 +1,18 @@
 {
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
-  "exclude": ["src/**/__tests__/*"],
+  "exclude": ["src/**/__tests__/**/*"],
   "compilerOptions": {
     // Extra safety for array and object lookups, but may have false positives.
     "noUncheckedIndexedAccess": true,
 
     // Path mapping for cleaner imports.
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      // Vuex 4.1 `package.json#exports` has no "types" condition, so TypeScript cannot
+      // find its declarations with `moduleResolution: bundler`. Point to them directly.
+      // https://github.com/vuejs/vuex/issues/2213
+      "vuex": ["./node_modules/vuex/types/index.d.ts"]
     },
 
     // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.

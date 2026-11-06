@@ -3,7 +3,7 @@ import type { Module } from 'vuex'
 
 import { getErrorMessage } from '@/api/errors'
 import { tasksApi, type TaskListParams } from '@/api/tasks'
-import type { Task } from '@/types/task'
+import type { Task, TaskPayload } from '@/types/task'
 import type { RootState } from '../types'
 
 export interface TasksState {
@@ -68,6 +68,18 @@ export const tasks: Module<TasksState, RootState> = {
       state.currentError = error
       state.currentLoading = false
     },
+
+    /** Puts the saved version of a task everywhere it is displayed */
+    TASK_UPDATED(state, task: Task) {
+      if (state.current?.id === task.id) {
+        state.current = task
+      }
+
+      const index = state.items.findIndex((item) => item.id === task.id)
+      if (index !== -1) {
+        state.items[index] = task
+      }
+    },
   },
 
   actions: {
@@ -101,6 +113,20 @@ export const tasks: Module<TasksState, RootState> = {
 
         commit('FETCH_ONE_FAILURE', message)
       }
+    },
+
+    // create/update let errors bubble up: the form shows them (e.g. 422 under each field)
+
+    async createTask(_, payload: TaskPayload): Promise<Task> {
+      // Not added to `items`: the list is paginated/filtered by the server, so the page reloads it
+      return tasksApi.create(payload)
+    },
+
+    async updateTask({ commit }, { id, payload }: { id: number; payload: Partial<TaskPayload> }) {
+      const task = await tasksApi.update(id, payload)
+      commit('TASK_UPDATED', task)
+
+      return task
     },
   },
 }
