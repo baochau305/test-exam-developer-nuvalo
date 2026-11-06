@@ -8,5 +8,3 @@ declare module 'vue-router' {
     layout?: 'default' | 'blank'
   }
 }
-
-
