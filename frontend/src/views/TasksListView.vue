@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { DataTableHeader } from 'vuetify'
 
 import type { TaskListParams } from '@/api/tasks'
+import TaskStatusChip from '@/components/TaskStatusChip.vue'
+import { TASK_STATUS_OPTIONS } from '@/constants/taskStatus'
 import { useStore } from '@/store'
-import type { Task } from '@/types/task'
+import type { Task, TaskStatus } from '@/types/task'
 
 const store = useStore()
 
@@ -19,8 +21,31 @@ const headers: DataTableHeader<Task>[] = [
 // Same default and max as the backend (Pagination::DEFAULT_PER_PAGE / MAX_PER_PAGE)
 const itemsPerPageOptions = [10, 15, 25, 50, 100]
 
+const SEARCH_DEBOUNCE_MS = 400
+
 const page = ref(1)
 const itemsPerPage = ref(15)
+
+// Filters. `null` comes from the clearable inputs
+const status = ref<TaskStatus | null>(null)
+const search = ref<string | null>('')
+// Value actually sent to the API, updated only when the user stops typing
+const debouncedSearch = ref('')
+
+watch(search, (value, _, onCleanup) => {
+  const timer = setTimeout(() => (debouncedSearch.value = value?.trim() ?? ''), SEARCH_DEBOUNCE_MS)
+  onCleanup(() => clearTimeout(timer))
+})
+
+// A new filter means a new result set: go back to page 1.
+// Changing `page` makes the table emit update:options, which reloads by itself.
+watch([status, debouncedSearch], () => {
+  if (page.value === 1) {
+    loadTasks()
+  } else {
+    page.value = 1
+  }
+})
 
 const tasks = computed(() => store.state.tasks.items)
 const total = computed(() => store.state.tasks.total)
@@ -33,6 +58,9 @@ function loadTasks() {
   const params: TaskListParams = {
     page: page.value,
     per_page: itemsPerPage.value,
+    // undefined params are left out of the query string by axios
+    status: status.value ?? undefined,
+    search: debouncedSearch.value || undefined,
   }
 
   return store.dispatch('tasks/fetchTasks', params)
@@ -41,6 +69,29 @@ function loadTasks() {
 
 <template>
   <h1 class="text-h5 mb-4">Tasks</h1>
+
+  <v-row dense class="mb-2">
+    <v-col cols="12" sm="6" md="4">
+      <v-text-field
+        v-model="search"
+        label="Search by title"
+        prepend-inner-icon="mdi-magnify"
+        density="compact"
+        hide-details
+        clearable
+      />
+    </v-col>
+    <v-col cols="12" sm="6" md="3">
+      <v-select
+        v-model="status"
+        :items="TASK_STATUS_OPTIONS"
+        label="Status"
+        density="compact"
+        hide-details
+        clearable
+      />
+    </v-col>
+  </v-row>
 
   <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4">
     {{ error }}
@@ -62,6 +113,10 @@ function loadTasks() {
     border
     @update:options="loadTasks"
   >
+    <template #[`item.status`]="{ item }">
+      <TaskStatusChip :status="item.status" />
+    </template>
+
     <template #[`item.assignee`]="{ item }">
       {{ item.assignee?.name ?? '-' }}
     </template>

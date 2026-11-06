@@ -8,6 +8,8 @@ export interface TaskListParams {
   per_page?: number
   status?: TaskStatus
   assigned_to?: number
+  /** Search by title */
+  search?: string
 }
 
 export const tasksApi = {
