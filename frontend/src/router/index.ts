@@ -27,6 +27,12 @@ export const routes: RouteRecordRaw[] = [
     meta: { title: 'Task detail', requiresAuth: true },
   },
   {
+    path: '/users',
+    name: 'users',
+    component: () => import('@/views/UsersView.vue'),
+    meta: { title: 'Users', requiresAuth: true, roles: ['admin'] },
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: { name: 'tasks' },
   },

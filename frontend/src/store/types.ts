@@ -1,5 +1,6 @@
 import type { AuthState } from './modules/auth'
 import type { TasksState } from './modules/tasks'
+import type { UsersState } from './modules/users'
 
 // Root has no state of its own, modules are added via `modules`
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -9,4 +10,5 @@ export interface RootState {}
 export interface AppState extends RootState {
   auth: AuthState
   tasks: TasksState
+  users: UsersState
 }

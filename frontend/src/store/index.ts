@@ -3,11 +3,12 @@ import { createStore, useStore as baseUseStore, type Store } from 'vuex'
 
 import { auth } from './modules/auth'
 import { tasks } from './modules/tasks'
+import { users } from './modules/users'
 import type { AppState, RootState } from './types'
 
 export function createAppStore() {
   return createStore<RootState>({
-    modules: { auth, tasks },
+    modules: { auth, tasks, users },
     // Throws when state is mutated outside a mutation (dev only, it is costly)
     strict: import.meta.env.DEV,
   }) as Store<AppState>

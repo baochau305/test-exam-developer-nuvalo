@@ -2,6 +2,8 @@ import type { NavigationGuard } from 'vue-router'
 import type { Store } from 'vuex'
 
 import type { AppState } from '@/store/types'
+// RouteMeta typings (requiresAuth, guestOnly, roles)
+import './types'
 
 export function createAuthGuard(store: Store<AppState>): NavigationGuard {
   return async (to) => {
@@ -25,6 +27,12 @@ export function createAuthGuard(store: Store<AppState>): NavigationGuard {
         store.commit('auth/CLEAR')
         return to.meta.requiresAuth ? { name: 'login', query: { redirect: to.fullPath } } : true
       }
+    }
+
+    // Checked after fetchMe, so the role is known even right after a reload
+    const role = store.state.auth.user?.role
+    if (to.meta.roles && (!role || !to.meta.roles.includes(role))) {
+      return { name: 'tasks' }
     }
 
     return true

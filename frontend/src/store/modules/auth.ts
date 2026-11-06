@@ -21,6 +21,7 @@ export const auth: Module<AuthState, RootState> = {
 
   getters: {
     isAuthenticated: (state) => state.token !== null,
+    isAdmin: (state) => state.user?.role === 'admin',
   },
 
   mutations: {
