@@ -9,9 +9,9 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class UserController extends Controller
 {
@@ -45,6 +45,8 @@ class UserController extends Controller
      */
     public function show(User $user): UserResource
     {
+        Gate::authorize('view', $user);
+
         return new UserResource($user->loadCount('tasks'));
     }
 
@@ -59,9 +61,11 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, User $user): Response
+    public function destroy(User $user): Response
     {
-        $this->userService->delete($user, $request->user());
+        Gate::authorize('delete', $user);
+
+        $this->userService->delete($user);
 
         return response()->noContent();
     }

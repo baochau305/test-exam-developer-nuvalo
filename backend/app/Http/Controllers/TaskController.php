@@ -11,6 +11,7 @@ use App\Services\TaskService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Gate;
 
 class TaskController extends Controller
 {
@@ -44,6 +45,8 @@ class TaskController extends Controller
      */
     public function show(Task $task): TaskResource
     {
+        Gate::authorize('view', $task);
+
         return new TaskResource($task);
     }
 
@@ -60,6 +63,8 @@ class TaskController extends Controller
      */
     public function destroy(Task $task): Response
     {
+        Gate::authorize('delete', $task);
+
         $this->taskService->delete($task);
 
         return response()->noContent();

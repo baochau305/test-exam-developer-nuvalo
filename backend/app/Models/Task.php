@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\TaskStatus;
+use App\Models\Concerns\HasOwner;
 use App\Models\Concerns\Searchable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Task extends Model
 {
-    use HasFactory, Searchable, SoftDeletes;
+    use HasFactory, HasOwner, Searchable, SoftDeletes;
 
     /**
      * @var array<string, mixed>
@@ -42,6 +43,7 @@ class Task extends Model
     {
         return [
             'status' => TaskStatus::class,
+            'assigned_to' => 'integer',
             'due_date' => 'date',
         ];
     }
@@ -49,5 +51,10 @@ class Task extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
+    }
+
+    public function getOwnerColumn(): string
+    {
+        return 'assigned_to';
     }
 }

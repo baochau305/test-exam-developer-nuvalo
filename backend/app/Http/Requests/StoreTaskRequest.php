@@ -13,6 +13,13 @@ class StoreTaskRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->user()->isAdmin()) {
+            $this->mergeIfMissing(['assigned_to' => $this->user()->id]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -22,8 +29,20 @@ class StoreTaskRequest extends FormRequest
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'status' => ['sometimes', 'required', Rule::enum(TaskStatus::class)],
-            'assigned_to' => ['required', 'integer', 'exists:users,id'],
+            'assigned_to' => $this->user()->isAdmin()
+                ? ['required', 'integer', 'exists:users,id']
+                : ['required', 'integer', Rule::in([$this->user()->id])],
             'due_date' => ['nullable', 'date_format:Y-m-d'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'assigned_to.in' => 'You can only assign tasks to yourself.',
         ];
     }
 }
