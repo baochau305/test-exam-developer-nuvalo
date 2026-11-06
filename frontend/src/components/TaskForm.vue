@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import axios from 'axios'
 import type { VForm } from 'vuetify/components'
 
 import { getErrorMessage } from '@/api/errors'
+import { useAssignees } from '@/composables/useAssignees'
 import { TASK_STATUS_OPTIONS } from '@/constants/taskStatus'
 import { useStore } from '@/store'
 import type { ValidationErrorBody } from '@/types/api'
@@ -37,6 +38,14 @@ interface FormState {
 type FieldErrors = Partial<Record<keyof TaskPayload, string[]>>
 
 const store = useStore()
+// Admins pick any user, a regular user only sees (and gets) themselves
+const {
+  isAdmin,
+  currentUser,
+  users,
+  loading: usersLoading,
+  error: usersError,
+} = useAssignees()
 
 const isEdit = computed(() => !!props.task)
 
@@ -50,10 +59,6 @@ const fieldErrors = ref<FieldErrors>({})
 
 const dateMenu = ref(false)
 
-const users = computed(() => store.state.users.items)
-const usersLoading = computed(() => store.state.users.loading)
-const usersError = computed(() => store.state.users.error)
-
 const rules = {
   required: (value: unknown) => (value !== null && value !== '') || 'This field is required.',
   maxLength: (max: number) => (value: string) =>
@@ -61,7 +66,14 @@ const rules = {
 }
 
 function emptyForm(): FormState {
-  return { title: '', description: '', status: 'todo', assigned_to: null, due_date: null }
+  return {
+    title: '',
+    description: '',
+    status: 'todo',
+    // A regular user can only assign tasks to themselves
+    assigned_to: isAdmin.value ? null : (currentUser.value?.id ?? null),
+    due_date: null,
+  }
 }
 
 function fillForm(task?: Task | null) {
@@ -92,8 +104,6 @@ for (const field of Object.keys(form) as (keyof FormState)[]) {
     () => delete fieldErrors.value[field],
   )
 }
-
-onMounted(() => store.dispatch('users/fetchUsers'))
 
 // v-date-picker works with Date objects, the API with 'YYYY-MM-DD'
 const dueDate = computed(() => (form.due_date ? fromIsoDate(form.due_date) : null))
@@ -185,6 +195,9 @@ async function submit() {
           item-value="id"
           label="Assignee *"
           :loading="usersLoading"
+          :disabled="!isAdmin"
+          :hint="isAdmin ? undefined : 'You can only assign tasks to yourself.'"
+          :persistent-hint="!isAdmin"
           :rules="[rules.required]"
           :error-messages="usersError ?? fieldErrors.assigned_to"
         />

@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 
 import TaskForm from '@/components/TaskForm.vue'
 import TaskStatusChip from '@/components/TaskStatusChip.vue'
+import { useAssignees } from '@/composables/useAssignees'
 import { useStore } from '@/store'
 
 const props = defineProps<{
@@ -10,6 +11,7 @@ const props = defineProps<{
 }>()
 
 const store = useStore()
+const { nameOf } = useAssignees()
 
 const task = computed(() => store.state.tasks.current)
 const loading = computed(() => store.state.tasks.currentLoading)
@@ -74,7 +76,7 @@ function formatDateTime(value: string | null) {
         <tbody>
           <tr>
             <th class="w-25">Assignee</th>
-            <td>{{ task.assignee?.name ?? '-' }}</td>
+            <td>{{ nameOf(task.assigned_to) }}</td>
           </tr>
           <tr>
             <th>Due date</th>

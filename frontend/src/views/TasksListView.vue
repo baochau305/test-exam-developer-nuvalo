@@ -5,15 +5,19 @@ import type { DataTableHeader } from 'vuetify'
 import type { TaskListParams } from '@/api/tasks'
 import TaskForm from '@/components/TaskForm.vue'
 import TaskStatusChip from '@/components/TaskStatusChip.vue'
+import UserAutocomplete from '@/components/UserAutocomplete.vue'
+import { useAssignees } from '@/composables/useAssignees'
+import { useDebounced } from '@/composables/useDebounced'
 import { TASK_STATUS_OPTIONS } from '@/constants/taskStatus'
 import { useStore } from '@/store'
 import type { Task, TaskStatus } from '@/types/task'
 
 const store = useStore()
+const { isAdmin, nameOf } = useAssignees()
 
 const headers: DataTableHeader<Task>[] = [
   { title: 'Title', key: 'title', sortable: false },
-  { title: 'Assignee', key: 'assignee', sortable: false },
+  { title: 'Assignee', key: 'assigned_to', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
   { title: 'Due Date', key: 'due_date', sortable: false },
   { title: 'Actions', key: 'actions', sortable: false, align: 'end' },
@@ -29,17 +33,15 @@ const itemsPerPage = ref(15)
 
 // Filters. `null` comes from the clearable inputs
 const status = ref<TaskStatus | null>(null)
+// Admins only: regular users only ever see their own tasks
+const assignedTo = ref<number | null>(null)
 const search = ref<string | null>('')
 // Value actually sent to the API, updated only when the user stops typing
-const debouncedSearch = ref('')
-
-watch(search, (value, _, onCleanup) => {
-  const timer = setTimeout(() => (debouncedSearch.value = value?.trim() ?? ''), SEARCH_DEBOUNCE_MS)
-  onCleanup(() => clearTimeout(timer))
-})
+const debouncedSearch = useDebounced(search, SEARCH_DEBOUNCE_MS)
+const searchTerm = computed(() => debouncedSearch.value?.trim() ?? '')
 
 // A new filter means a new result set: go back to page 1
-watch([status, debouncedSearch], reloadFromFirstPage)
+watch([status, assignedTo, searchTerm], reloadFromFirstPage)
 
 const tasks = computed(() => store.state.tasks.items)
 const total = computed(() => store.state.tasks.total)
@@ -54,7 +56,8 @@ function loadTasks() {
     per_page: itemsPerPage.value,
     // undefined params are left out of the query string by axios
     status: status.value ?? undefined,
-    search: debouncedSearch.value || undefined,
+    assigned_to: assignedTo.value ?? undefined,
+    search: searchTerm.value || undefined,
   }
 
   return store.dispatch('tasks/fetchTasks', params)
@@ -128,6 +131,16 @@ function onSaved() {
         clearable
       />
     </v-col>
+    <v-col v-if="isAdmin" cols="12" sm="6" md="3">
+      <!-- Searches users on the server as the admin types -->
+      <UserAutocomplete
+        v-model="assignedTo"
+        label="Assignee"
+        density="compact"
+        hide-details
+        clearable
+      />
+    </v-col>
   </v-row>
 
   <v-alert v-if="error" type="error" variant="tonal" density="compact" class="mb-4">
@@ -154,8 +167,8 @@ function onSaved() {
       <TaskStatusChip :status="item.status" />
     </template>
 
-    <template #[`item.assignee`]="{ item }">
-      {{ item.assignee?.name ?? '-' }}
+    <template #[`item.assigned_to`]="{ item }">
+      {{ nameOf(item.assigned_to) }}
     </template>
 
     <template #[`item.due_date`]="{ item }">
