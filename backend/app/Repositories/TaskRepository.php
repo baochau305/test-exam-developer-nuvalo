@@ -10,7 +10,6 @@ class TaskRepository
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
     {
         return Task::query()
-            ->with('user')
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['assigned_to'] ?? null, fn ($query, $userId) => $query->where('assigned_to', $userId))
             ->when($filters['search'] ?? null, fn ($query, $search) => $query->search($search, ['title', 'description']))

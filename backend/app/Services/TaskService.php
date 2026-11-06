@@ -21,12 +21,12 @@ class TaskService
 
     public function create(array $data): Task
     {
-        return $this->taskRepo->create($data)->load('user');
+        return $this->taskRepo->create($data);
     }
 
     public function update(Task $task, array $data): Task
     {
-        return $this->taskRepo->update($task, $data)->load('user');
+        return $this->taskRepo->update($task, $data);
     }
 
     public function delete(Task $task): void
