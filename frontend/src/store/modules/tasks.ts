@@ -1,3 +1,4 @@
+import axios from 'axios'
 import type { Module } from 'vuex'
 
 import { getErrorMessage } from '@/api/errors'
@@ -11,6 +12,11 @@ export interface TasksState {
   total: number
   loading: boolean
   error: string | null
+
+  /** Task opened on the detail page */
+  current: Task | null
+  currentLoading: boolean
+  currentError: string | null
 }
 
 // Lets fetchTasks ignore responses of older requests when the user
@@ -25,6 +31,10 @@ export const tasks: Module<TasksState, RootState> = {
     total: 0,
     loading: false,
     error: null,
+
+    current: null,
+    currentLoading: false,
+    currentError: null,
   }),
 
   mutations: {
@@ -43,6 +53,21 @@ export const tasks: Module<TasksState, RootState> = {
       state.error = error
       state.loading = false
     },
+
+    FETCH_ONE_START(state) {
+      // Clear the previous task so it is not shown while the new one loads
+      state.current = null
+      state.currentLoading = true
+      state.currentError = null
+    },
+    FETCH_ONE_SUCCESS(state, task: Task) {
+      state.current = task
+      state.currentLoading = false
+    },
+    FETCH_ONE_FAILURE(state, error: string) {
+      state.currentError = error
+      state.currentLoading = false
+    },
   },
 
   actions: {
@@ -59,6 +84,22 @@ export const tasks: Module<TasksState, RootState> = {
         if (requestId !== latestRequestId) return
 
         commit('FETCH_FAILURE', getErrorMessage(error, 'Could not load tasks.'))
+      }
+    },
+
+    async fetchTask({ commit }, id: number) {
+      commit('FETCH_ONE_START')
+
+      try {
+        commit('FETCH_ONE_SUCCESS', await tasksApi.get(id))
+      } catch (error) {
+        // Laravel's 404 message ("No query results for model ...") is not user friendly
+        const message =
+          axios.isAxiosError(error) && error.response?.status === 404
+            ? 'Task not found.'
+            : getErrorMessage(error, 'Could not load the task.')
+
+        commit('FETCH_ONE_FAILURE', message)
       }
     },
   },
