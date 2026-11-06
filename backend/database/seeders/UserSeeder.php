@@ -13,6 +13,7 @@ class UserSeeder extends Seeder
         $users = [
             ['name' => 'Admin', 'email' => 'admin@gmail.com', 'role' => UserRole::Admin],
             ['name' => 'User 1', 'email' => 'user1@gmail.com', 'role' => UserRole::User],
+            ['name' => 'User 2', 'email' => 'user2@gmail.com', 'role' => UserRole::User],
         ];
 
         foreach ($users as $data) {
