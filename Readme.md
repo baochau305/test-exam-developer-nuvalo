@@ -1,6 +1,6 @@
 ## Backend setup
 
-Laravel 11 + Sanctum, chạy bằng Docker (Apache 2.4, PHP 8.3-FPM, MySQL 8.4).
+Laravel 11 + Sanctum, run in Docker (Apache 2.4, PHP 8.3-FPM, MySQL 8.4)
 
 ### Require
 
